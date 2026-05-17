@@ -45,7 +45,6 @@ class ZephyrClient:
     def close(self) -> None:
         self._http.close()
 
-    @_zephyr_retry
     def create_test_case(
         self,
         project_key: str,
@@ -53,30 +52,42 @@ class ZephyrClient:
         test_case: TestCase,
         folder_id: int | None = None,
     ) -> str:
+        gherkin_text = f"Feature: {test_case.title}\n\n{test_case.gherkin}"
         payload = {
             "projectKey": project_key,
             "name": test_case.title,
             "statusName": "Draft",
-            "priorityName": _PRIORITY_MAP[test_case.risk_level],
             "labels": test_case.tags,
             "testScript": {
                 "type": "BDD",
-                "text": test_case.gherkin,
+                "text": gherkin_text,
             },
         }
         if folder_id:
             payload["folderId"] = folder_id
 
         response = self._http.post(f"{self._base}/testcases", json=payload)
+        if response.status_code == 409:
+            logger.warning("Test case '%s' already exists in Zephyr — skipping", test_case.title)
+            return None
+        if response.status_code == 404:
+            logger.warning(
+                "Zephyr returned 404 creating test case '%s' — check projectKey and folderId. Body: %s",
+                test_case.title,
+                response.text[:300],
+            )
+            return None
         response.raise_for_status()
         test_key: str = response.json()["key"]
         logger.info("Created Zephyr test case %s for story %s", test_key, story_key)
         return test_key
 
-    @_zephyr_retry
     def link_test_to_story(self, test_key: str, issue_key: str) -> None:
         payload = {"issueKey": issue_key, "testCaseKey": test_key}
         response = self._http.post(f"{self._base}/issuelinks", json=payload)
+        if response.status_code == 404:
+            logger.warning("issuelinks endpoint not available (404) — skipping link for %s", test_key)
+            return
         response.raise_for_status()
         logger.info("Linked %s to Jira issue %s", test_key, issue_key)
 

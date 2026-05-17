@@ -232,7 +232,8 @@ async def _write_single_test(tc: TestCase, issue_key: str, folder_id: int) -> No
         _zephyr.create_test_case, project_key, issue_key, tc, folder_id
     )
     tc.zephyr_key = test_key
-    await asyncio.to_thread(_zephyr.link_test_to_story, test_key, issue_key)
+    if test_key:
+        await asyncio.to_thread(_zephyr.link_test_to_story, test_key, issue_key)
 
 
 async def _write_to_zephyr(suite: TestSuite, issue_key: str) -> None:

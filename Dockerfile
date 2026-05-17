@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY config.py .
 COPY src/ src/
+COPY prompts/ prompts/
 
 RUN mkdir -p output && chown -R appuser:appgroup /app
 
