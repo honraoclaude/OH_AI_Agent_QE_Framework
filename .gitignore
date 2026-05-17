@@ -1,0 +1,28 @@
+# Credentials & secrets
+.env
+*.pem
+*.key
+
+# Output artifacts
+output/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Docker
+.dockerignore
